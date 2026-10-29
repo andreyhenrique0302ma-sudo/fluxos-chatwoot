@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fluxos · Chatwoot</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#17201d;--mut:#66736e;--line:#dfe5e2;--acc:#0f7b63;--acc2:#e6f3ef;--warn:#b45309;--warnbg:#fef3c7;--err:#b42318;--errbg:#fee4e2;--wa:#e7ddd3;--wab:#d9fdd3}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#0d2b24;color:#fff;padding:0 20px;display:flex;align-items:center;gap:24px;height:56px;position:sticky;top:0;z-index:5}
+header b{font-size:16px;letter-spacing:.2px}header nav{display:flex;gap:4px}
+header nav button{background:none;border:0;color:#b9d3cb;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit}
+header nav button.on{background:#1d4a3f;color:#fff}
+#st{margin-left:auto;font-size:12px;color:#b9d3cb}
+main{padding:20px;max-width:1400px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:240px 1fr 340px;gap:16px;align-items:start}
+@media(max-width:1100px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px;font-weight:600}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+textarea{resize:vertical;min-height:70px}
+button.b{background:var(--acc);color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+button.g{background:#fff;color:var(--ink);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer;font:inherit}
+button.x{background:none;border:0;color:var(--err);cursor:pointer;font-size:13px}
+button:disabled{opacity:.5;cursor:default}
+.flowlist div{padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px}
+.flowlist div:hover{background:var(--acc2)}.flowlist div.on{background:var(--acc2);font-weight:600;color:var(--acc)}
+.fgrid{display:grid;grid-template-columns:200px 1fr 320px;gap:12px;height:calc(100vh - 96px)}
+.fgrid>.card{overflow:auto;min-height:0}
+@media(max-width:1100px){.fgrid{grid-template-columns:1fr;height:auto}.fgrid>.canvaswrap{height:80vh}}
+.canvaswrap{display:flex;flex-direction:column;padding:0!important;overflow:hidden!important}
+.ebar,.tools{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tools{background:#fbfcfc}
+.fname{width:260px;font-weight:600}
+.mini{font-size:12px!important;padding:5px 8px!important}
+.canvas{position:relative;flex:1;min-height:300px;overflow:hidden;cursor:grab;touch-action:none;background:#f7f9f8 radial-gradient(#cdd6d2 1px,transparent 1px) 0 0/20px 20px}
+.world{position:absolute;left:0;top:0;transform-origin:0 0}
+#edges{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+.edge .hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:pointer}
+.edge .vis{fill:none;stroke-width:2.2}.edge:hover .vis{stroke-width:3.5}
+.edge .del{opacity:0;pointer-events:all;cursor:pointer}.edge:hover .del{opacity:1}
+.node{position:absolute;width:270px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 8px #0000001a;cursor:default}
+.node.start{width:auto;white-space:nowrap}
+.node.live{box-shadow:0 0 0 3px #facc15,0 2px 8px #0000001a}
+.node .nh{display:flex;gap:6px;align-items:center;padding:7px 10px;border-radius:11px 11px 0 0;background:var(--hd);color:#fff;cursor:move;font-weight:600;user-select:none}
+.node.start .nh{border-radius:11px}
+.node .nh input{flex:1;min-width:0;background:transparent;border:0;color:#fff;font-weight:600;padding:2px 4px}
+.node .nh input:focus{background:#ffffff26;outline:0}
+.nx{background:none;border:0;color:#ffffffb3;cursor:pointer;font-size:13px}.nx:hover{color:#fff}
+.node .nb{padding:10px}
+.node textarea{min-height:64px;font-size:13px}
+.opt{position:relative;display:flex;align-items:center;gap:6px;margin-top:6px;min-height:28px}
+.opt input{flex:1}
+.port{position:absolute;right:-18px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:#fff;border:2px solid var(--hd);cursor:crosshair;z-index:2}
+.port:hover{transform:scale(1.3)}.port.on{background:var(--hd)}
+.nin{position:absolute;left:-8px;top:13px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #9aa8a3}
+.dropmenu{position:absolute;z-index:4;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #00000026;padding:6px;display:flex;flex-direction:column;min-width:200px}
+.dropmenu b{font-size:11px;color:var(--mut);padding:4px 10px}
+.dropmenu button{background:none;border:0;text-align:left;padding:7px 10px;border-radius:6px;cursor:pointer;font:inherit}
+.dropmenu button:hover{background:var(--acc2)}
+.cvhint{position:absolute;left:10px;bottom:8px;right:10px;font-size:11px;color:var(--mut);pointer-events:none}
+.cvhint span{background:#ffffffd9;padding:3px 8px;border-radius:6px}
+.dgrid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:start}
+@media(max-width:1000px){.dgrid{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{background:#fff;border:0;padding:7px 12px;cursor:pointer;font:inherit;font-size:13px;color:var(--mut)}
+.seg button.on{background:var(--acc2);color:var(--acc);font-weight:600}
+.chk{display:flex;gap:6px;align-items:center;margin:0;font-size:13px;color:var(--ink);font-weight:400;cursor:pointer}
+.chk input{width:auto}
+.convlist{border:1px solid var(--line);border-radius:10px;max-height:calc(100vh - 290px);min-height:200px;overflow:auto}
+.conv{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;margin:0;font-weight:400;color:var(--ink);font-size:13px}
+.conv:hover{background:#f7faf9}.conv.on{background:var(--acc2)}
+.conv>input{width:auto;margin-top:12px}
+.av{flex:none;width:38px;height:38px;border-radius:50%;background:#cfe3dc;color:var(--acc);display:grid;place-items:center;font-weight:700;font-size:15px}
+.ci{flex:1;min-width:0}
+.ci .r1{display:flex;justify-content:space-between;gap:8px}
+.ci .last{color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.badges .chip{font-weight:600}
+.unread{background:var(--acc);color:#fff;border-radius:99px;font-size:11px;padding:0 7px;font-weight:700}
+.vars{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;align-items:center}
+.vars .hint{font-size:11px}
+.vchip{background:var(--acc2);color:var(--acc);border:0;border-radius:99px;padding:3px 9px;font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+.vchip:hover{background:var(--acc);color:#fff}
+.media{display:flex;gap:8px;align-items:center;margin-top:8px;padding:6px;border:1px solid var(--line);border-radius:8px;background:#fafcfb}
+.media img{width:48px;height:48px;object-fit:cover;border-radius:6px;flex:none}
+.media .mico{width:48px;height:48px;display:grid;place-items:center;font-size:24px;background:#eef2f0;border-radius:6px;flex:none}
+.media .mi{flex:1;min-width:0;font-size:12px}
+.media .mi b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bub img{display:block;max-width:100%;border-radius:6px;margin-bottom:4px}
+.cwrap{border-bottom:1px solid var(--line)}.cwrap .conv{border-bottom:0}
+.msgbtn{background:none;border:0;color:#027eb5;cursor:pointer;font:inherit;font-size:12px;padding:0;margin-top:6px}
+.msgs{background:var(--wa);margin:0 12px 12px 60px;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:5px}
+.msgs .mh{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut);margin-bottom:2px}
+.msgs .bub{max-width:88%;align-self:flex-start}
+.msgs .bub.me{align-self:flex-end}
+.msgs .bub.nota{align-self:flex-end;background:#fdf3c4}
+.msgs .bub small{display:block;font-size:10.5px;color:var(--mut);margin-top:2px}
+.sumbox{margin:14px 0 10px;padding:10px 12px;border-radius:10px;background:#f4f8f6;border:1px solid var(--line);font-size:13px}
+.hint{font-size:12px;color:var(--mut)}.warn{font-size:12px;color:var(--warn);background:var(--warnbg);padding:6px 8px;border-radius:6px;margin-top:6px}
+.phone{background:var(--wa);border-radius:14px;padding:12px;height:560px;display:flex;flex-direction:column}
+.chat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:6px}
+.bub{max-width:85%;padding:7px 10px;border-radius:8px;background:#fff;white-space:pre-wrap;font-size:13px;box-shadow:0 1px 1px #0001}
+.bub.me{align-self:flex-end;background:var(--wab)}.bub.sys{align-self:center;background:#fff8;font-size:11px;color:var(--mut)}
+.qb{display:flex;flex-direction:column;gap:4px;max-width:85%}
+.qb button{background:#fff;border:0;border-radius:8px;padding:7px;color:#027eb5;cursor:pointer;font:inherit;font-size:13px;box-shadow:0 1px 1px #0001}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--mut)}
+.chip{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;white-space:nowrap}
+.c-ativo,.c-aguardando_inicio,.c-pendente{background:#e0ecff;color:#1d4ed8}.c-concluido,.c-enviado{background:var(--acc2);color:var(--acc)}
+.c-humano{background:var(--warnbg);color:var(--warn)}.c-erro{background:var(--errbg);color:var(--err)}.c-cancelado{background:#eee;color:#555}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.stats div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:120px}
+.stats b{display:block;font-size:22px}.bar{height:8px;background:var(--line);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+code{background:#eef2f0;padding:2px 6px;border-radius:5px;font-size:12px;word-break:break-all}
+.hide{display:none}
+.toast{position:fixed;bottom:20px;right:20px;background:#0d2b24;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.2s;pointer-events:none}.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <b>⚡ Fluxos Chatwoot</b>
+  <nav>
+    <button data-t="fluxos" class="on">Fluxos</button>
+    <button data-t="disparo">Disparar</button>
+    <button data-t="acomp">Acompanhamento</button>
+    <button data-t="config">Configuração</button>
+  </nav>
+  <span id="st"></span>
+</header>
+<main>
+
+<!-- ============ FLUXOS ============ -->
+<section id="t-fluxos">
+  <div class="fgrid">
+    <div class="card">
+      <button class="b" style="width:100%" onclick="newFlow()">+ Novo fluxo</button>
+      <button class="g" style="width:100%;margin-top:6px" onclick="$('#impFile').click()">⬆ Importar fluxo</button>
+      <input type="file" id="impFile" accept=".json,application/json" class="hide" onchange="importFlow(this)">
+      <div class="flowlist" id="flowlist" style="margin-top:12px"></div>
+    </div>
+    <div class="card canvaswrap" id="editor"><p class="hint" style="padding:16px">Crie ou selecione um fluxo.</p></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Pré-visualização</b><button class="g" onclick="simStart()">▶ Testar</button></div>
+      <p class="hint">Simula o WhatsApp do paciente (não envia nada).</p>
+      <div class="phone"><div class="chat" id="chat"></div>
+        <div class="row hide" id="simin"><input id="simtxt" placeholder="Digite a resposta…" onkeydown="if(event.key==='Enter')simAnswer()"><button class="b" onclick="simAnswer()">➤</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DISPARO ============ -->
+<section id="t-disparo" class="hide">
+  <div class="dgrid">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>1. Para quem enviar</b>
+        <div class="seg" id="srcSeg"><button class="on" data-src="conv" onclick="setSrc('conv')">💬 Conversas do Chatwoot</button><button data-src="lista" onclick="setSrc('lista')">📋 Colar lista</button></div></div>
+      <div id="srcConv">
+        <div class="row" style="margin-top:10px;flex-wrap:nowrap">
+          <input id="cvQ" placeholder="Buscar por nome ou telefone…" oninput="renderConvs()">
+          <select id="cvSt" style="width:auto" onchange="loadConvs()"><option value="open">Abertas</option><option value="pending">Pendentes</option><option value="resolved">Resolvidas</option><option value="all">Todas</option></select>
+          <button class="g" title="Atualizar" onclick="loadConvs()">↻</button>
+        </div>
+        <div class="row" style="margin:8px 0;justify-content:space-between">
+          <label class="chk"><input type="checkbox" id="cvAll" onchange="selAll(this.checked)"> Selecionar todas da lista</label>
+          <span class="hint" id="cvInfo"></span>
+        </div>
+        <div class="convlist" id="convList"></div>
+        <button class="g hide" id="cvMore" style="width:100%;margin-top:8px" onclick="loadConvs(true)">Carregar mais conversas</button>
+      </div>
+      <div id="srcLista" class="hide">
+        <label>Contatos — um por linha: <code>Nome;Telefone</code> (aceita colar do Excel/Sheets)</label>
+        <textarea id="dContacts" style="min-height:220px" oninput="parseContacts()" placeholder="Maria Souza;31999998888&#10;João Lima;(31) 98888-7777"></textarea>
+        <div class="row" style="margin-top:6px"><input type="file" accept=".csv,.txt" onchange="loadCsv(this)" style="width:auto"><span class="hint" id="cCount"></span></div>
+      </div>
+    </div>
+    <div class="card">
+      <b>2. O que enviar</b>
+      <label>Fluxo</label><select id="dFlow"></select>
+      <label>Como iniciar a conversa</label>
+      <select id="dMode" onchange="renderMode()">
+        <option value="auto">Automático: direto p/ quem falou nas últimas 24h, template p/ os demais (recomendado)</option>
+        <option value="template">Template da Meta para todos</option>
+        <option value="direto">Direto para todos (só funciona dentro das 24h)</option>
+      </select>
+      <div id="tplBox">
+        <p class="hint">Quem recebe o template entra no fluxo quando responder (ex.: tocar em “Receber orientação”).</p>
+        <div class="row"><button class="g" onclick="loadTemplates()">Carregar templates do Chatwoot</button><span class="hint" id="tplMsg"></span></div>
+        <select id="tplSel" class="hide" onchange="pickTpl()" style="margin-top:8px"></select>
+        <div class="row" style="flex-wrap:nowrap">
+          <div style="flex:2"><label>Nome do template</label><input id="tName" placeholder="onboarding_inicio" oninput="renderSum()"></div>
+          <div style="flex:1"><label>Idioma</label><input id="tLang" value="pt_BR"></div>
+          <div style="flex:1"><label>Categoria</label><select id="tCat"><option>UTILITY</option><option>MARKETING</option></select></div>
+        </div>
+        <label>Texto do template (como aparece, com {{1}}, {{2}}…)</label>
+        <textarea id="tBody" oninput="renderParams()" placeholder="Olá, {{1}}! Aqui é da Renovi Saúde…"></textarea>
+        <div id="tParams"></div>
+      </div>
+      <div class="sumbox" id="dSum"></div>
+      <button class="b" id="dGo" style="width:100%" onclick="dispatch()">🚀 Disparar</button>
+      <div style="margin-top:18px"><b>Disparos recentes</b><div id="dList"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACOMPANHAMENTO ============ -->
+<section id="t-acomp" class="hide">
+  <div class="card">
+    <div class="row"><b>Pacientes nos fluxos</b>
+      <select id="aFlow" style="width:auto" onchange="loadSessions()"></select>
+      <button class="g" onclick="exportCsv()">⬇ Exportar respostas (CSV)</button>
+      <span class="hint">Atualiza sozinho a cada 5s</span></div>
+    <div class="stats" id="aStats"></div>
+    <div style="overflow:auto"><table><thead><tr><th>Paciente</th><th>Status</th><th>Etapa atual</th><th>Respostas</th><th>Atualizado</th><th></th></tr></thead><tbody id="aBody"></tbody></table></div>
+  </div>
+</section>
+
+<!-- ============ CONFIG ============ -->
+<section id="t-config" class="hide">
+  <div class="card" style="max-width:820px">
+    <b>Conexão com o Chatwoot</b>
+    <div id="cfg" style="margin-top:10px"></div>
+    <button class="b" style="margin-top:12px" onclick="testConn()">Testar conexão</button> <span id="testMsg" class="hint"></span>
+    <h4>Passo a passo no Chatwoot</h4>
+    <ol class="hint" style="font-size:13px;line-height:1.7">
+      <li>Configurações → <b>Integrações → Webhooks</b> → Adicionar novo webhook.</li>
+      <li>Cole a URL do webhook acima e marque o evento <b>Mensagem criada</b> (message_created).</li>
+      <li>Pronto: quando o paciente tocar num botão, o Chatwoot avisa este sistema, que manda a próxima mensagem.</li>
+      <li>Ao terminar o fluxo, a conversa recebe a etiqueta <code>fluxo-concluido</code> e uma nota interna com as respostas. Se o paciente pedir atendente ou travar, recebe <code>atendimento-humano</code>.</li>
+    </ol>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api = async (p, o = {}) => { const r = await fetch(p, { headers: { 'Content-Type': 'application/json' }, ...o, body: o.body ? JSON.stringify(o.body) : undefined }); const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j; };
+const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); };
+const sid = () => 's' + Math.random().toString(36).slice(2, 7);
+const STATUS = { aguardando_inicio: 'Aguardando resposta', ativo: 'No fluxo', concluido: 'Concluído', humano: 'Atendente', erro: 'Erro', cancelado: 'Cancelado', pendente: 'Pendente', enviado: 'Enviado' };
+let flows = [], cur = null, cfg = {}, timer = null;
+
+// ---------- abas ----------
+document.querySelectorAll('header nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('header nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hide', s.id !== 't-' + b.dataset.t));
+  clearInterval(timer);
+  if (b.dataset.t === 'disparo') { fillFlowSelects(); loadDispatches(); timer = setInterval(loadDispatches, 4000); if (!convsLoaded) loadConvs(); renderSum(); }
+  if (b.dataset.t === 'acomp') { fillFlowSelects(); loadSessions(); timer = setInterval(loadSessions, 5000); }
+});
+
+// ---------- fluxos ----------
+async function loadFlows() { flows = await api('/api/flows'); renderList(); }
+function renderList() {
+  $('#flowlist').innerHTML = flows.map(f => `<div class="${cur?.id === f.id ? 'on' : ''}" onclick="openFlow('${f.id}')">${esc(f.name)}<div class="hint">${f.steps.length} blocos</div></div>`).join('') || '<p class="hint">Nenhum fluxo ainda.</p>';
+}
+const TYPES = {
+  mensagem: { ico: '💬', name: 'Mensagem' },
+  botoes: { ico: '🔘', name: 'Botões' },
+  pergunta: { ico: '✍️', name: 'Pergunta' },
+  fim: { ico: '✅', name: 'Finalizar' },
+  humano: { ico: '🙋', name: 'Atendente' },
+};
+const COLORS = { mensagem: '#2563eb', botoes: '#0f7b63', pergunta: '#7c3aed', fim: '#475569', humano: '#b45309', start: '#0d2b24' };
+let view = { x: 0, y: 0, z: 1 }, menuCtx = null;
+const ro = new ResizeObserver(() => drawEdges());
+const outs = s => [s.next, s.onText, ...(s.buttons || []).map(b => b.next)];
+
+function makeStep(t, x, y) {
+  const n = cur.steps.filter(s => s.type === t).length + 1;
+  const s = { id: sid(), type: t, title: `${TYPES[t].name} ${n}`, text: '', x: Math.round(x), y: Math.round(y), next: null };
+  if (t === 'botoes') Object.assign(s, { buttons: [{ label: 'Sim', next: null }, { label: 'Não', next: null }], saveAs: '', onText: null });
+  if (t === 'pergunta') s.saveAs = '';
+  if (t === 'fim' || t === 'humano') Object.assign(s, { title: TYPES[t].name, label: '' });
+  return s;
+}
+function newFlow() {
+  cur = { name: 'Novo fluxo', keywords: [], labelDone: 'fluxo-concluido', startPos: { x: 40, y: 60 }, steps: [] };
+  const a = makeStep('mensagem', 240, 40); a.title = 'Primeira mensagem';
+  cur.steps.push(a); cur.startStepId = a.id;
+  view = { x: 20, y: 20, z: 1 };
+  renderEditor(); renderList(); simStart();
+}
+// fluxos do editor antigo: troca __fim__/__humano__ por blocos e marca para organizar
+function migrate(f) {
+  let fim = null, hum = null;
+  const ref = v => {
+    if (v === '__fim__') return (fim ||= { id: sid(), type: 'fim', title: 'Finalizar', text: '', label: '' }).id;
+    if (v === '__humano__' || v === 'humano') return (hum ||= { id: sid(), type: 'humano', title: 'Atendente', text: '', label: '' }).id;
+    return v || null;
+  };
+  f.steps.forEach(s => {
+    s.next = s.type === 'botoes' ? null : ref(s.next);
+    (s.buttons || []).forEach(b => { b.next = ref(b.next); });
+    s.onText = s.onText === 'repetir' ? null : ref(s.onText);
+  });
+  for (const x of [fim, hum]) if (x) f.steps.push(x);
+  const need = !f.startPos || f.steps.some(s => s.x == null);
+  f.startPos ||= { x: 40, y: 60 };
+  f.steps.forEach(s => { s.x ??= 0; s.y ??= 0; });
+  return need;
+}
+function openFlow(id) {
+  cur = structuredClone(flows.find(f => f.id === id));
+  const need = migrate(cur);
+  renderEditor(); renderList();
+  if (need) autoLayout(); else fit();
+  simStart();
+}
+
+function warnings(s) {
+  const w = [];
+  if (s.type === 'botoes') {
+    const n = s.buttons.length, max = n <= 3 ? 20 : 24;
+    if (!n) w.push('Adicione pelo menos 1 botão.');
+    if (n > 3) w.push('Com mais de 3 opções o WhatsApp mostra como lista (“Ver opções”).');
+    s.buttons.forEach(b => { if (b.label.length > max) w.push(`“${b.label}” passa de ${max} caracteres e será cortado.`); });
+    if (new Set(s.buttons.map(b => b.label.toLowerCase())).size < n) w.push('Há botões com o mesmo texto.');
+    if ((s.text || '').length > 1024) w.push('Mensagem com botões aceita até 1024 caracteres.');
+  }
+  return w.map(x => `<div class="warn">⚠️ ${esc(x)}</div>`).join('');
+}
+function renderEditor() {
+  if (!cur) return;
+  const f = cur;
+  $('#editor').innerHTML = `
+    <div class="ebar">
+      <input class="fname" value="${esc(f.name)}" oninput="cur.name=this.value" title="Nome do fluxo">
+      <button class="g mini" onclick="$('#fSet').classList.toggle('hide')">⚙ Configurações</button>
+      <button class="g mini" onclick="exportFlow()" title="Baixa este fluxo como arquivo para importar em outro painel">⬇ Exportar</button>
+      <span style="flex:1"></span>
+      ${f.id ? `<button class="x" onclick="delFlow()">Excluir</button>` : ''}
+      <button class="b" onclick="saveFlow()">💾 Salvar</button>
+    </div>
+    <div id="fSet" class="hide" style="padding:0 12px 12px;border-bottom:1px solid var(--line)">
+      <div class="row" style="flex-wrap:nowrap;align-items:flex-start">
+        <div style="flex:1"><label>➕ Etiqueta ao concluir</label>
+          <input value="${esc(f.labelDone || '')}" oninput="cur.labelDone=this.value" onchange="renderNodes()" placeholder="fluxo-concluido"></div>
+        <div style="flex:1"><label>➖ Remover etiquetas ao concluir</label>
+          <input value="${esc(f.removeLabels || '')}" oninput="cur.removeLabels=this.value" onchange="renderNodes()" placeholder="ex.: aguardando-liberacao"></div>
+      </div>
+      <p class="hint">Vale quando o fluxo termina numa saída sem conexão ou num ✅ Finalizar com esses campos vazios. Várias etiquetas: separe por vírgula.</p>
+      <label>Palavras-chave que iniciam o fluxo quando o paciente escreve (opcional, separe por vírgula)</label>
+      <input value="${esc((f.keywords || []).join(', '))}" oninput="cur.keywords=this.value.split(',').map(s=>s.trim()).filter(Boolean)" placeholder="onboarding, quero começar">
+      <p class="hint">Variáveis no texto: <code>{{nome}}</code> <code>{{primeiro_nome}}</code> <code>{{telefone}}</code>, colunas extras da lista de disparo e respostas salvas (ex.: <code>{{finalizou}}</code>).</p>
+    </div>
+    <div class="tools">
+      <span class="hint">Adicionar bloco:</span>
+      ${Object.entries(TYPES).map(([t, x]) => `<button class="g mini" onclick="addNode('${t}')">${x.ico} ${x.name}</button>`).join('')}
+      <span style="flex:1"></span>
+      <button class="g mini" title="Diminuir zoom" onclick="zoom(1/1.2)">−</button><button class="g mini" title="Aumentar zoom" onclick="zoom(1.2)">+</button>
+      <button class="g mini" onclick="fit()">Centralizar</button><button class="g mini" onclick="autoLayout()">Organizar</button>
+    </div>
+    <div class="canvas" id="cv">
+      <div class="world" id="world"><svg id="edges"></svg><div id="nodes"></div></div>
+      <div class="dropmenu hide" id="dropmenu"></div>
+      <div class="cvhint"><span>Arraste a bolinha ● de uma saída até outro bloco para conectar · solte no vazio para criar um bloco novo · arraste o fundo para mover · roda do mouse = zoom</span></div>
+    </div>`;
+  bindCanvas();
+  renderNodes();
+}
+
+function nodeHtml(s, i) {
+  const P = (k, on) => `<span class="port ${on ? 'on' : ''}" data-from="${s.id}|${k}" title="Arraste até outro bloco"></span>`;
+  const end = s.type === 'fim' || s.type === 'humano';
+  const answers = [...new Set(cur.steps.filter(x => x.id !== s.id).map(x => (x.saveAs || '').trim()).filter(k => /^[\w.-]+$/.test(k)))];
+  let body = `<div class="varbox"><textarea placeholder="${end ? 'Mensagem final ao paciente (opcional)' : 'Texto da mensagem…'}" oninput="cur.steps[${i}].text=this.value">${esc(s.text)}</textarea>${varChips(answers)}</div>${mediaHtml(s)}`;
+  if (s.type === 'botoes') {
+    body += s.buttons.map((b, j) => `<div class="opt"><input class="mini" value="${esc(b.label)}" maxlength="24" placeholder="Texto do botão" oninput="cur.steps[${i}].buttons[${j}].label=this.value"><button class="x" title="Remover botão" onclick="delBtn(${i},${j})">✕</button>${P('b' + j, b.next)}</div>`).join('')
+      + `<button class="g mini" style="margin-top:6px" onclick="addBtn(${i})">+ Botão</button>`
+      + `<div class="opt"><span class="hint">Se digitar em vez de tocar${s.onText ? '' : ' <i>(sem conexão: repete as opções)</i>'}</span>${P('text', s.onText)}</div>`;
+  }
+  if (s.type === 'mensagem' || s.type === 'pergunta')
+    body += `<div class="opt"><span class="hint">${s.type === 'pergunta' ? 'Depois da resposta' : 'Em seguida'}${s.next ? '' : ' <i>(sem conexão: finaliza)</i>'}</span>${P('next', s.next)}</div>`;
+  if (s.type === 'botoes' || s.type === 'pergunta')
+    body += `<input class="mini" style="margin-top:8px" value="${esc(s.saveAs || '')}" placeholder="Salvar resposta como (ex.: finalizou)" oninput="cur.steps[${i}].saveAs=this.value" onchange="renderNodes()">`;
+  if (s.type === 'fim')
+    body += `<label>➕ Adicionar etiqueta</label><input class="mini" value="${esc(s.label || '')}" placeholder="padrão do fluxo: ${esc(cur.labelDone || 'fluxo-concluido')}" oninput="cur.steps[${i}].label=this.value">
+      <label>➖ Remover etiquetas</label><input class="mini" value="${esc(s.removeLabels || '')}" placeholder="${cur.removeLabels ? 'padrão do fluxo: ' + esc(cur.removeLabels) : 'ex.: aguardando-liberacao'}" oninput="cur.steps[${i}].removeLabels=this.value">`;
+  if (s.type === 'humano')
+    body += `<label>➕ Etiqueta extra (opcional)</label><input class="mini" value="${esc(s.label || '')}" oninput="cur.steps[${i}].label=this.value">
+      <label>➖ Remover etiquetas (opcional)</label><input class="mini" value="${esc(s.removeLabels || '')}" placeholder="ex.: aguardando-liberacao" oninput="cur.steps[${i}].removeLabels=this.value">
+      <div class="hint" style="margin-top:6px">Recebe <code>atendimento-humano</code> e a conversa fica aberta para a equipe.</div>`;
+  body += warnings(s);
+  return `<div class="node" data-id="${s.id}" style="left:${s.x}px;top:${s.y}px;--hd:${COLORS[s.type]}">
+    <div class="nin"></div>
+    <div class="nh"><span>${TYPES[s.type].ico}</span><input value="${esc(s.title)}" oninput="cur.steps[${i}].title=this.value" title="Nome do bloco"><button class="nx" title="Excluir bloco" onclick="delStep(${i})">✕</button></div>
+    <div class="nb">${body}</div></div>`;
+}
+// mídia do bloco (imagem, vídeo, áudio, documento)
+const MEDIA_ACCEPT = '.jpg,.jpeg,.png,.mp4,.3gp,.mp3,.ogg,.m4a,.aac,.amr,.pdf,.doc,.docx,.xls,.xlsx';
+const mediaIcon = m => m.mime.startsWith('video/') ? '🎬' : m.mime.startsWith('audio/') ? '🎵' : '📄';
+const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+function mediaHtml(s) {
+  const m = s.media;
+  if (!m) return `<button class="g mini" style="margin-top:8px" onclick="pickMedia('${s.id}')">📎 Anexar imagem, vídeo, áudio ou PDF</button>`;
+  const how = s.type === 'botoes' ? 'vai antes dos botões' : m.mime.startsWith('audio/') ? 'o texto vai logo depois do áudio' : 'o texto vai como legenda';
+  return `<div class="media">${m.mime.startsWith('image/') ? `<img src="/api/media/${m.id}" alt="">` : `<span class="mico">${mediaIcon(m)}</span>`}
+    <div class="mi"><b title="${esc(m.name)}">${esc(m.name)}</b><span class="hint">${fmtSize(m.size)} · ${how}</span></div>
+    <button class="x" title="Trocar arquivo" onclick="pickMedia('${s.id}')">↻</button><button class="x" title="Remover mídia" onclick="setMedia('${s.id}',null)">✕</button></div>`;
+}
+function setMedia(id, m) { const s = cur.steps.find(x => x.id === id); if (s) { s.media = m; renderNodes(); } }
+async function uploadMedia(f) {
+  const r = await fetch('/api/media', { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream', 'X-Filename': encodeURIComponent(f.name) }, body: f });
+  let j; try { j = await r.json(); } catch { j = { error: r.status === 413 ? 'Arquivo grande demais (máx. 16 MB)' : 'Falha ao enviar o arquivo' }; }
+  if (!r.ok) throw new Error(j.error);
+  return j;
+}
+function pickMedia(id) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = MEDIA_ACCEPT;
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    toast('Enviando arquivo…');
+    try { setMedia(id, await uploadMedia(f)); toast('Mídia anexada ✓'); } catch (e) { toast('⚠️ ' + e.message); }
+  };
+  inp.click();
+}
+
+// botões que inserem {{variável}} onde está o cursor
+const VARS = [['primeiro_nome', '👤 Primeiro nome'], ['nome', 'Nome completo'], ['telefone', '📞 Telefone']];
+function varChips(answers = []) {
+  return `<div class="vars"><span class="hint">Inserir:</span>${VARS.map(([k, l]) => `<button class="vchip" title="Insere {{${k}}}" onclick="insVar(this,'${k}')">${l}</button>`).join('')}`
+    + answers.map(k => `<button class="vchip" title="Insere a resposta salva {{${k}}}" onclick="insVar(this,'${k}')">↩ ${esc(k)}</button>`).join('') + '</div>';
+}
+function insVar(btn, k) {
+  const el = btn.closest('.varbox').querySelector('textarea, input');
+  const used = el.dataset.f; // nunca clicado: insere no fim
+  const s = used ? el.selectionStart : el.value.length, e = used ? el.selectionEnd : s;
+  const pre = s > 0 && !/[\s(]/.test(el.value[s - 1]) ? ' ' : '';
+  el.setRangeText(pre + `{{${k}}}`, s, e, 'end'); el.dataset.f = 1; el.focus();
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+document.addEventListener('focusin', e => { if (e.target.closest?.('.varbox')) e.target.dataset.f = 1; });
+function renderNodes() {
+  if (!$('#nodes')) return;
+  hideMenu(true);
+  $('#nodes').innerHTML = `<div class="node start" data-id="__start__" style="left:${cur.startPos.x}px;top:${cur.startPos.y}px;--hd:${COLORS.start}"><div class="nh"><div class="opt" style="margin:0;min-height:0">▶ Início<span class="port ${cur.startStepId ? 'on' : ''}" data-from="__start__|start" title="Arraste até o primeiro bloco"></span></div></div></div>`
+    + cur.steps.map(nodeHtml).join('');
+  ro.disconnect(); document.querySelectorAll('#nodes .node').forEach(n => ro.observe(n));
+  applyView(); drawEdges(); markLive(sim?.live);
+}
+
+// ligações: from = "idDoBloco|next" | "|text" | "|b0", "|b1"… | "__start__|start"
+function link(from, val) {
+  const [id, k] = from.split('|');
+  if (id === '__start__') return val === undefined ? cur.startStepId : (cur.startStepId = val);
+  const s = cur.steps.find(x => x.id === id); if (!s) return null;
+  if (k === 'next') return val === undefined ? s.next : (s.next = val);
+  if (k === 'text') return val === undefined ? s.onText : (s.onText = val);
+  const b = s.buttons?.[+k.slice(1)]; if (!b) return null;
+  return val === undefined ? b.next : (b.next = val);
+}
+function unlink(from) { link(from, null); renderNodes(); }
+
+function toWorld(cx, cy) { const r = $('#cv').getBoundingClientRect(); return { x: (cx - r.left - view.x) / view.z, y: (cy - r.top - view.y) / view.z }; }
+function center(el) { const r = el.getBoundingClientRect(); return toWorld(r.left + r.width / 2, r.top + r.height / 2); }
+function curve(a, b) { const dx = Math.max(50, Math.abs(b.x - a.x) / 2); return `M${a.x},${a.y} C${a.x + dx},${a.y} ${b.x - dx},${b.y} ${b.x},${b.y}`; }
+function drawEdges(temp) {
+  const svg = $('#edges'); if (!svg) return;
+  let h = '';
+  document.querySelectorAll('#nodes .port').forEach(p => {
+    const from = p.dataset.from, to = link(from);
+    const tn = to && document.querySelector(`#nodes .node[data-id="${to}"] .nin`);
+    p.classList.toggle('on', !!tn);
+    if (!tn) return;
+    const a = center(p), c = center(tn), b = { x: c.x - 7, y: c.y };
+    const col = p.closest('.node').style.getPropertyValue('--hd');
+    h += `<g class="edge"><path class="hit" d="${curve(a, b)}"/><path class="vis" d="${curve(a, b)}" stroke="${col}" ${from.endsWith('|text') ? 'stroke-dasharray="6 5"' : ''}/>
+      <path d="M${b.x - 9},${b.y - 5} L${b.x},${b.y} L${b.x - 9},${b.y + 5}z" fill="${col}"/>
+      <g class="del" transform="translate(${(a.x + b.x) / 2},${(a.y + b.y) / 2})" onclick="unlink('${from}')"><circle r="10" fill="#fff" stroke="${col}"/><text text-anchor="middle" dy="4" font-size="11" fill="${col}">✕</text></g></g>`;
+  });
+  if (temp) h += `<path d="${curve(temp.a, temp.b)}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4" fill="none"/>`;
+  svg.innerHTML = h;
+}
+function applyView() {
+  const w = $('#world'), cv = $('#cv'); if (!w) return;
+  w.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`;
+  cv.style.backgroundPosition = `${view.x}px ${view.y}px`; cv.style.backgroundSize = `${20 * view.z}px ${20 * view.z}px`;
+}
+function zoom(f, cx, cy) {
+  const r = $('#cv').getBoundingClientRect();
+  const px = (cx ?? r.left + r.width / 2) - r.left, py = (cy ?? r.top + r.height / 2) - r.top;
+  const nz = Math.min(1.6, Math.max(0.3, view.z * f));
+  view.x = px - (px - view.x) * nz / view.z; view.y = py - (py - view.y) * nz / view.z; view.z = nz;
+  applyView();
+}
+function fit() {
+  const cv = $('#cv'), els = [...document.querySelectorAll('#nodes .node')];
+  if (!cv || !els.length || !cv.clientWidth) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  els.forEach(el => { x0 = Math.min(x0, el.offsetLeft); y0 = Math.min(y0, el.offsetTop); x1 = Math.max(x1, el.offsetLeft + el.offsetWidth); y1 = Math.max(y1, el.offsetTop + el.offsetHeight); });
+  const W = cv.clientWidth, H = cv.clientHeight, pad = 40;
+  view.z = Math.min(1, Math.max(0.3, Math.min((W - pad * 2) / (x1 - x0), (H - pad * 2) / (y1 - y0))));
+  view.x = (W - (x1 - x0) * view.z) / 2 - x0 * view.z;
+  view.y = Math.max(pad, (H - (y1 - y0) * view.z) / 2) - y0 * view.z;
+  applyView(); drawEdges();
+}
+// organiza em colunas seguindo as conexões a partir do Início
+function autoLayout() {
+  const depth = {}, order = [], q = cur.startStepId ? [[cur.startStepId, 0]] : [];
+  while (q.length) {
+    const [id, d] = q.shift(); if (id in depth) continue;
+    const s = cur.steps.find(x => x.id === id); if (!s) continue;
+    depth[id] = d; order.push(s); outs(s).forEach(n => n && q.push([n, d + 1]));
+  }
+  const loose = Math.max(-1, ...Object.values(depth)) + 1;
+  cur.steps.forEach(s => { if (!(s.id in depth)) { depth[s.id] = loose; order.push(s); } });
+  const colY = {};
+  cur.startPos = { x: 40, y: 60 };
+  for (const s of order) {
+    const d = depth[s.id], el = document.querySelector(`#nodes .node[data-id="${s.id}"]`);
+    s.x = 230 + d * 340; s.y = colY[d] ?? 40; colY[d] = s.y + (el ? el.offsetHeight : 200) + 40;
+  }
+  renderNodes(); fit();
+}
+
+function track(e, move, up) {
+  e.preventDefault();
+  const mm = ev => move(ev), uu = ev => { removeEventListener('pointermove', mm); removeEventListener('pointerup', uu); up?.(ev); };
+  addEventListener('pointermove', mm); addEventListener('pointerup', uu);
+}
+function bindCanvas() {
+  const cv = $('#cv');
+  cv.addEventListener('pointerdown', e => {
+    if (!e.target.closest('.dropmenu')) hideMenu();
+    const port = e.target.closest('.port');
+    if (port) return startLink(e, port);
+    const nh = e.target.closest('.nh');
+    if (nh && !e.target.closest('input,button')) return startDrag(e, nh.closest('.node'));
+    if (e.target.closest('.node, .edge, .dropmenu')) return;
+    const sx = e.clientX - view.x, sy = e.clientY - view.y;
+    cv.style.cursor = 'grabbing';
+    track(e, ev => { view.x = ev.clientX - sx; view.y = ev.clientY - sy; applyView(); }, () => { cv.style.cursor = ''; });
+  });
+  cv.addEventListener('wheel', e => {
+    if (e.target.closest('textarea')) return;
+    e.preventDefault(); zoom(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX, e.clientY);
+  }, { passive: false });
+}
+function startDrag(e, el) {
+  const id = el.dataset.id, o = id === '__start__' ? cur.startPos : cur.steps.find(x => x.id === id);
+  const p0 = toWorld(e.clientX, e.clientY), ox = p0.x - o.x, oy = p0.y - o.y;
+  track(e, ev => {
+    const p = toWorld(ev.clientX, ev.clientY);
+    o.x = Math.round(p.x - ox); o.y = Math.round(p.y - oy);
+    el.style.left = o.x + 'px'; el.style.top = o.y + 'px'; drawEdges();
+  });
+}
+function startLink(e, port) {
+  const from = port.dataset.from, a = center(port);
+  track(e, ev => drawEdges({ a, b: toWorld(ev.clientX, ev.clientY) }), ev => {
+    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+    const node = el?.closest('#nodes .node');
+    if (node) {
+      const to = node.dataset.id;
+      if (to !== '__start__' && to !== from.split('|')[0]) { link(from, to); return renderNodes(); }
+      return drawEdges();
+    }
+    if (el?.closest('#cv')) return showMenu(ev, from, a);
+    drawEdges();
+  });
+}
+function showMenu(ev, from, a) {
+  const r = $('#cv').getBoundingClientRect(), m = $('#dropmenu');
+  menuCtx = { from, p: toWorld(ev.clientX, ev.clientY) };
+  m.innerHTML = '<b>Criar bloco conectado</b>' + Object.entries(TYPES).map(([t, x]) => `<button onclick="menuAdd('${t}')">${x.ico} ${x.name}</button>`).join('')
+    + (link(from) ? `<button onclick="unlink(menuCtx.from)">✕ Remover conexão</button>` : '');
+  m.classList.remove('hide');
+  m.style.left = Math.min(ev.clientX - r.left, r.width - 210) + 'px';
+  m.style.top = Math.min(ev.clientY - r.top, r.height - 260) + 'px';
+  drawEdges({ a, b: menuCtx.p });
+}
+function hideMenu(quiet) {
+  const m = $('#dropmenu'); if (!m || m.classList.contains('hide')) return;
+  m.classList.add('hide'); menuCtx = null; if (!quiet) drawEdges();
+}
+function menuAdd(t) {
+  const { from, p } = menuCtx;
+  const s = makeStep(t, p.x, p.y - 18);
+  cur.steps.push(s); link(from, s.id); renderNodes();
+}
+function addNode(t) {
+  const r = $('#cv').getBoundingClientRect(), p = toWorld(r.left + r.width / 2 - 135 * view.z, r.top + r.height / 3);
+  const s = makeStep(t, p.x + (cur.steps.length % 5) * 20, p.y + (cur.steps.length % 5) * 20);
+  cur.steps.push(s); if (!cur.startStepId) cur.startStepId = s.id;
+  renderNodes();
+}
+function delStep(i) {
+  const id = cur.steps[i].id;
+  if (!confirm(`Excluir o bloco “${cur.steps[i].title}”?`)) return;
+  cur.steps.splice(i, 1);
+  cur.steps.forEach(s => { if (s.next === id) s.next = null; if (s.onText === id) s.onText = null; (s.buttons || []).forEach(b => { if (b.next === id) b.next = null; }); });
+  if (cur.startStepId === id) cur.startStepId = null;
+  renderNodes();
+}
+function addBtn(i) { const s = cur.steps[i]; if (s.buttons.length >= 10) return toast('WhatsApp aceita no máximo 10 opções'); s.buttons.push({ label: '', next: null }); renderNodes(); }
+function delBtn(i, j) { cur.steps[i].buttons.splice(j, 1); renderNodes(); }
+
+async function saveFlow() {
+  if (!cur.startStepId) return toast('Conecte o ▶ Início ao primeiro bloco');
+  if (cur.steps.some(s => s.type === 'botoes' && (!s.buttons.length || s.buttons.some(b => !b.label.trim())))) return toast('Há botões sem texto');
+  cur = await api('/api/flows', { method: 'POST', body: cur }); await loadFlows(); renderEditor(); toast('Fluxo salvo ✓');
+}
+// exportar/importar: leva só o fluxo (sem pacientes) de um painel para outro
+const toDataUrl = blob => new Promise((ok, err) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = err; r.readAsDataURL(blob); });
+async function exportFlow() {
+  const f = structuredClone(cur); delete f.updatedAt;
+  // as mídias vão dentro do arquivo, para o outro painel ter os mesmos anexos
+  const midias = {};
+  for (const s of f.steps) if (s.media && !midias[s.media.id]) {
+    const r = await fetch('/api/media/' + s.media.id);
+    if (!r.ok) return toast(`⚠️ A mídia “${s.media.name}” não foi encontrada — remova ou anexe de novo antes de exportar`);
+    midias[s.media.id] = { name: s.media.name, mime: s.media.mime, data: await toDataUrl(await r.blob()) };
+  }
+  const json = JSON.stringify({ formato: 'fluxos-chatwoot', versao: 1, exportadoEm: new Date().toISOString(), fluxo: f, midias }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = 'fluxo-' + (f.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'sem-nome') + '.json';
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Fluxo exportado ✓');
+}
+async function importFlow(inp) {
+  const file = inp.files[0]; inp.value = ''; if (!file) return;
+  let f, midias;
+  try { const j = JSON.parse(await file.text()); f = j.fluxo || j; midias = j.midias || {}; } catch { return toast('Arquivo inválido: não é um fluxo exportado'); }
+  if (!f?.name || !Array.isArray(f.steps) || f.steps.some(s => !s.id || !TYPES[s.type])) return toast('Esse arquivo não é um fluxo exportado deste sistema');
+  const same = flows.find(x => x.id === f.id);
+  if (same && !confirm(`Já existe o fluxo “${same.name}” aqui.\n\nOK = substituir pelo arquivo importado\nCancelar = importar como cópia`)) { delete f.id; f.name += ' (cópia)'; }
+  try {
+    // sobe as mídias que vieram no arquivo e troca pelos ids deste painel
+    const novos = {}, faltando = [];
+    for (const s of f.steps) if (s.media) {
+      const m = midias[s.media.id];
+      if (!m) { faltando.push(s.media.name); s.media = null; continue; }
+      if (!novos[s.media.id]) {
+        const blob = await (await fetch(m.data)).blob();
+        novos[s.media.id] = await uploadMedia(new File([blob], m.name, { type: m.mime }));
+      }
+      s.media = novos[s.media.id];
+    }
+    if (faltando.length) alert('Estas mídias não estavam no arquivo e foram removidas dos blocos:\n• ' + faltando.join('\n• '));
+    const saved = await api('/api/flows', { method: 'POST', body: f });
+    await loadFlows(); openFlow(saved.id); toast('Fluxo importado ✓');
+  } catch (e) { toast('Erro ao importar: ' + e.message); }
+}
+async function delFlow() { if (!confirm('Excluir este fluxo?')) return; await api('/api/flows/' + cur.id, { method: 'DELETE' }); cur = null; $('#editor').innerHTML = '<p class="hint" style="padding:16px">Fluxo excluído.</p>'; loadFlows(); }
+
+// ---------- simulador ----------
+let sim = null;
+const vars = () => ({ nome: 'Maria Souza', primeiro_nome: 'Maria', telefone: '5531999998888', ...(sim?.answers || {}) });
+const rend = t => String(t || '').replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (m, k) => vars()[k] ?? '');
+function bub(text, cls = '') { const d = document.createElement('div'); d.className = 'bub ' + cls; d.textContent = text; $('#chat').append(d); $('#chat').scrollTop = 1e9; }
+// mesma regra do servidor: o que o bloco preencher vale; o que estiver vazio usa o do fluxo
+function labelsTxt(add, remove) {
+  const a = (add || '').trim() || cur.labelDone || 'fluxo-concluido';
+  const r = (remove || '').trim() || (cur.removeLabels || '').trim();
+  return `etiqueta “${a}”` + (r ? `, remove “${r}”` : '');
+}
+function mediaBub(m, caption) {
+  const d = document.createElement('div'); d.className = 'bub';
+  if (m.mime.startsWith('image/')) { const img = document.createElement('img'); img.src = '/api/media/' + m.id; d.append(img); }
+  else d.append(`${mediaIcon(m)} ${m.name}\n`);
+  if (caption) d.append(caption);
+  $('#chat').append(d); $('#chat').scrollTop = 1e9;
+}
+function markLive(id) {
+  document.querySelectorAll('#nodes .node.live').forEach(n => n.classList.remove('live'));
+  if (id) document.querySelector(`#nodes .node[data-id="${id}"]`)?.classList.add('live');
+}
+function simStart() {
+  if (!cur) return; $('#chat').innerHTML = ''; sim = { answers: {} };
+  if (!cur.startStepId) return bub('Conecte o ▶ Início ao primeiro bloco', 'sys');
+  simGo(cur.startStepId);
+}
+function simGo(id, n = 0) {
+  if (n > 40) return bub('Loop no fluxo', 'sys');
+  $('#simin').classList.add('hide');
+  sim.live = id; markLive(id);
+  if (!id || id === '__fim__') return bub(`✅ Fluxo concluído — ${labelsTxt()} e nota com as respostas`, 'sys');
+  if (id === '__humano__') return bub('🙋 Transferido para atendente', 'sys');
+  const s = cur.steps.find(x => x.id === id); if (!s) return bub('Bloco não encontrado', 'sys');
+  sim.step = s; sim.invalid = 0;
+  const cap = s.media && s.type !== 'botoes' && !s.media.mime.startsWith('audio/'); // mesma regra do envio real
+  if (s.media) mediaBub(s.media, cap ? rend(s.text) : '');
+  if ((s.text || '').trim() && !cap) bub(rend(s.text));
+  if (s.type === 'fim') return bub(`✅ Fluxo concluído — ${labelsTxt(s.label, s.removeLabels)} e nota com as respostas`, 'sys');
+  if (s.type === 'humano') return bub(`🙋 Transferido para atendente — etiqueta “atendimento-humano”${s.label ? ' + “' + s.label + '”' : ''}${(s.removeLabels || '').trim() ? ', remove “' + s.removeLabels.trim() + '”' : ''}, conversa aberta`, 'sys');
+  if (s.type === 'mensagem') return simGo(s.next, n + 1);
+  $('#simin').classList.remove('hide'); $('#simtxt').focus();
+  if (s.type === 'botoes') simButtons(s);
+}
+function simButtons(s) {
+  const q = document.createElement('div'); q.className = 'qb';
+  s.buttons.forEach(b => { const x = document.createElement('button'); x.textContent = '↩ ' + b.label; x.onclick = () => { bub(b.label, 'me'); simPick(s, b); }; q.append(x); });
+  $('#chat').append(q); $('#chat').scrollTop = 1e9;
+}
+function simPick(s, b) { document.querySelectorAll('#chat .qb').forEach(q => q.remove()); sim.answers[s.saveAs || s.title] = b.label; simGo(b.next); }
+function simAnswer() {
+  const v = $('#simtxt').value.trim(); if (!v) return; $('#simtxt').value = ''; bub(v, 'me');
+  const s = sim.step;
+  if (s.type !== 'botoes') { sim.answers[s.saveAs || s.title] = v; return simGo(s.next); }
+  const b = s.buttons[parseInt(v, 10) - 1] || s.buttons.find(b => b.label.trim().toLowerCase() === v.toLowerCase());
+  if (b) return simPick(s, b);
+  document.querySelectorAll('#chat .qb').forEach(q => q.remove());
+  if (s.onText) { sim.answers[s.saveAs || s.title] = v; return simGo(s.onText); }
+  if (++sim.invalid > 2) { sim.answers[s.saveAs || s.title] = v; return simGo('__humano__'); }
+  bub('Não entendi 😅 Por favor, toque em uma das opções abaixo:'); simButtons(s);
+}
+
+// ---------- disparo ----------
+function fillFlowSelects() {
+  const o = flows.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  const d = $('#dFlow').value; $('#dFlow').innerHTML = o; if (d) $('#dFlow').value = d;
+  const a = $('#aFlow').value; $('#aFlow').innerHTML = '<option value="">Todos os fluxos</option>' + o; $('#aFlow').value = a || '';
+}
+function renderMode() { renderSum(); }
+let templates = [];
+async function loadTemplates() {
+  $('#tplMsg').textContent = 'Carregando…';
+  const r = await api('/api/templates'); templates = r.templates;
+  $('#tplMsg').textContent = r.ok ? `${templates.length} template(s) aprovados` : 'Não deu para listar — preencha à mão. ' + (r.error || '');
+  if (templates.length) { $('#tplSel').classList.remove('hide'); $('#tplSel').innerHTML = '<option value="">Escolha…</option>' + templates.map((t, i) => `<option value="${i}">${esc(t.name)} (${t.language})${t.buttons.length ? ' · botões: ' + esc(t.buttons.join(', ')) : ''}</option>`).join(''); }
+}
+function pickTpl() { const t = templates[$('#tplSel').value]; if (!t) return; $('#tName').value = t.name; $('#tLang').value = t.language; $('#tCat').value = t.category === 'MARKETING' ? 'MARKETING' : 'UTILITY'; $('#tBody').value = t.body; renderParams(); renderSum(); }
+function renderParams() {
+  const n = new Set(($('#tBody').value.match(/\{\{\s*\d+\s*\}\}/g) || []).map(x => x.replace(/\D/g, ''))).size;
+  const old = [...document.querySelectorAll('.tparam')].map(x => x.value);
+  $('#tParams').innerHTML = Array.from({ length: n }, (_, i) => `<label>Valor de {{${i + 1}}}</label><div class="varbox"><input class="tparam" value="${esc(old[i] ?? (i === 0 ? '{{primeiro_nome}}' : ''))}" placeholder="texto fixo ou use os botões abaixo">${varChips()}</div>`).join('');
+}
+let contacts = [];
+function parseContacts() {
+  const lines = $('#dContacts').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const split = l => l.split(/\t|;|,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(x => x.replace(/^"|"$/g, '').trim());
+  let head = null;
+  if (lines.length && /telefone|celular|phone|whats/i.test(lines[0])) head = split(lines.shift()).map(h => h.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\W+/g, '_'));
+  contacts = lines.map(l => {
+    const c = split(l);
+    if (!head) { const pi = c.findIndex(x => (x.replace(/\D/g, '').length >= 10)); return { phone: c[pi] || '', name: c.filter((_, i) => i !== pi).join(' ').trim(), vars: {} }; }
+    const o = {}; head.forEach((h, i) => o[h] = c[i] || '');
+    const pk = head.find(h => /telefone|celular|phone|whats/.test(h)), nk = head.find(h => /nome|name/.test(h));
+    return { phone: o[pk] || '', name: o[nk] || '', vars: o };
+  }).filter(c => c.phone.replace(/\D/g, '').length >= 10);
+  $('#cCount').textContent = `${contacts.length} contato(s) válido(s)` + (head ? ` · colunas: ${head.join(', ')}` : '');
+  if (src === 'lista') renderSum();
+}
+function loadCsv(inp) { const f = inp.files[0]; if (!f) return; f.text().then(t => { $('#dContacts').value = t; parseContacts(); }); }
+// ---------- conversas do Chatwoot (escolher quem recebe) ----------
+let src = 'conv', convs = [], convPage = 1, convsLoaded = false;
+const picked = new Map(); // conversationId → { conversationId, name, phone, canReply }
+function setSrc(s) {
+  src = s;
+  document.querySelectorAll('#srcSeg button').forEach(b => b.classList.toggle('on', b.dataset.src === s));
+  $('#srcConv').classList.toggle('hide', s !== 'conv'); $('#srcLista').classList.toggle('hide', s !== 'lista');
+  renderSum();
+}
+function ago(ts) {
+  const m = Math.floor((Date.now() / 1000 - ts) / 60);
+  return m < 1 ? 'agora' : m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h' : Math.floor(m / 1440) + ' d';
+}
+async function loadConvs(more) {
+  convPage = more ? convPage + 1 : 1;
+  if (!more) $('#convList').innerHTML = '<p class="hint" style="padding:12px">Carregando conversas…</p>';
+  const r = await api(`/api/conversas?status=${$('#cvSt').value}&page=${convPage}`);
+  convsLoaded = true;
+  if (!r.ok) {
+    $('#convList').innerHTML = `<p class="hint" style="padding:12px">Não deu para buscar as conversas do Chatwoot.<br>${esc(r.error)}<br><br>Confira o .env ou use “📋 Colar lista”.</p>`;
+    $('#cvMore').classList.add('hide'); return;
+  }
+  convs = more ? convs.concat(r.list.filter(c => !convs.some(x => x.id === c.id))) : r.list;
+  $('#cvMore').classList.toggle('hide', !r.hasMore);
+  renderConvs();
+}
+function visibleConvs() {
+  const q = $('#cvQ').value.trim().toLowerCase(), qd = q.replace(/\D/g, '');
+  return convs.filter(c => !q || c.name.toLowerCase().includes(q) || (qd.length >= 3 && c.phone.replace(/\D/g, '').includes(qd)));
+}
+const FSTATUS = { aguardando_inicio: '⏳ aguardando template', ativo: '▶ no fluxo', concluido: '✅ concluiu', humano: '🙋 atendente', erro: '⚠ erro', cancelado: 'cancelado' };
+function renderConvs() {
+  const list = visibleConvs();
+  $('#convList').innerHTML = list.map(c => `<div class="cwrap">
+    <label class="conv ${picked.has(c.id) ? 'on' : ''}">
+      <input type="checkbox" ${picked.has(c.id) ? 'checked' : ''} onchange="toggleConv(${c.id},this.checked)">
+      <div class="av">${esc((c.name || '?').trim()[0]?.toUpperCase() || '?')}</div>
+      <div class="ci">
+        <div class="r1"><b>${esc(c.name || c.phone || 'Sem nome')}</b><span class="hint">${c.lastAt ? ago(c.lastAt) : ''} ${c.unread ? `<span class="unread">${c.unread}</span>` : ''}</span></div>
+        <div class="hint">${esc(c.phone)} · conv. #${c.id}</div>
+        <div class="last">${c.lastText ? (c.lastIncoming ? '' : '↪ ') + esc(c.lastText) : '<i>sem mensagens</i>'}</div>
+        <div class="badges">
+          ${c.canReply ? '<span class="chip c-concluido">🟢 falou nas últimas 24h</span>' : '<span class="chip c-cancelado">⏱ fora das 24h · precisa de template</span>'}
+          ${c.flow ? `<span class="chip c-${c.flow.status}">${esc(c.flow.name)}: ${FSTATUS[c.flow.status] || c.flow.status}</span>` : ''}
+          ${c.labels.map(l => `<span class="chip c-pendente">${esc(l)}</span>`).join('')}
+        </div>
+        <button class="msgbtn" onclick="toggleMsgs(event,${c.id})">💬 ${opened.has(c.id) ? 'Esconder mensagens ▴' : 'Últimas mensagens ▾'}</button>
+      </div>
+    </label>${opened.has(c.id) ? msgsHtml(c.id) : ''}</div>`).join('') || '<p class="hint" style="padding:12px">Nenhuma conversa encontrada.</p>';
+  $('#cvAll').checked = list.length > 0 && list.every(c => picked.has(c.id));
+  $('#cvInfo').textContent = `${convs.length} conversa(s) carregada(s)`;
+  renderSum();
+}
+// últimas 10 mensagens da conversa (carrega só quando abre)
+const opened = new Set(), msgCache = {};
+let onlyPatient = false;
+function toggleMsgs(ev, id) {
+  ev.preventDefault(); ev.stopPropagation();
+  if (opened.has(id)) opened.delete(id); else { opened.add(id); if (!msgCache[id]?.ok) loadMsgs(id); }
+  renderConvs();
+}
+async function loadMsgs(id) {
+  msgCache[id] = { loading: true }; renderConvs();
+  try { msgCache[id] = await api(`/api/conversas/${id}/mensagens`); } catch (e) { msgCache[id] = { ok: false, error: e.message }; }
+  renderConvs();
+}
+function msgsHtml(id) {
+  const m = msgCache[id] || {};
+  const head = `<div class="mh"><label class="chk" style="font-size:12px"><input type="checkbox" ${onlyPatient ? 'checked' : ''} onchange="onlyPatient=this.checked;renderConvs()"> só do paciente</label>
+    <button class="msgbtn" style="margin:0" onclick="loadMsgs(${id})">↻ atualizar</button></div>`;
+  if (m.loading) return `<div class="msgs">${head}<span class="hint">Carregando…</span></div>`;
+  if (!m.ok) return `<div class="msgs">${head}<span class="hint">Não deu para carregar: ${esc(m.error || '')}</span></div>`;
+  const list = m.list.filter(x => !onlyPatient || x.who === 'paciente').slice(-10);
+  const when = t => new Date(t * 1000).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return `<div class="msgs">${head}${list.map(x => `<div class="bub ${x.private ? 'nota' : x.who === 'paciente' ? '' : 'me'}">${x.private ? '🔒 ' : ''}${esc(x.text) || '<i>(vazia)</i>'}<small>${when(x.at)}${x.who === 'equipe' && x.sender ? ' · ' + esc(x.sender) : ''}${x.private ? ' · nota interna' : ''}</small></div>`).join('')
+    || '<span class="hint">Nenhuma mensagem.</span>'}</div>`;
+}
+function toggleConv(id, on) {
+  const c = convs.find(x => x.id === id);
+  if (on && c) picked.set(id, { conversationId: c.id, name: c.name, phone: c.phone, canReply: c.canReply }); else picked.delete(id);
+  renderConvs();
+}
+function selAll(on) { visibleConvs().forEach(c => on ? picked.set(c.id, { conversationId: c.id, name: c.name, phone: c.phone, canReply: c.canReply }) : picked.delete(c.id)); renderConvs(); }
+function recipients() {
+  return src === 'conv' ? [...picked.values()].map(p => ({ ...p, vars: {} })) : contacts;
+}
+function renderSum() {
+  const mode = $('#dMode').value, rs = recipients();
+  const dir = mode === 'direto' ? rs.length : mode === 'template' ? 0 : rs.filter(r => r.canReply).length;
+  const tpl = rs.length - dir;
+  const noWin = mode === 'direto' ? rs.filter(r => !r.canReply).length : 0;
+  $('#dSum').innerHTML = !rs.length ? `<span class="hint">${src === 'conv' ? 'Marque as conversas à esquerda.' : 'Cole os contatos à esquerda.'}</span>`
+    : `<b>${rs.length}</b> paciente(s) · <b>${dir}</b> recebem o fluxo direto · <b>${tpl}</b> recebem o template primeiro`
+      + (src === 'conv' && picked.size ? ` <button class="x" onclick="picked.clear();renderConvs()">limpar seleção</button>` : '')
+      + (noWin ? `<div class="warn">⚠️ ${noWin} paciente(s) estão fora da janela de 24h — o WhatsApp vai recusar o envio direto. Use o modo Automático.</div>` : '')
+      + (tpl && !$('#tName').value.trim() ? '<div class="warn">⚠️ Escolha o template acima.</div>' : '');
+  $('#tplBox').classList.toggle('hide', mode === 'direto' || (mode === 'auto' && rs.length > 0 && !tpl));
+}
+async function dispatch() {
+  if (src === 'lista') parseContacts();
+  const rs = recipients();
+  if (!rs.length) return toast(src === 'conv' ? 'Marque pelo menos uma conversa' : 'Cole os contatos primeiro');
+  const mode = $('#dMode').value;
+  const needsTpl = mode === 'template' || (mode === 'auto' && rs.some(r => !r.canReply));
+  const template = needsTpl ? { name: $('#tName').value.trim(), language: $('#tLang').value.trim(), category: $('#tCat').value, body: $('#tBody').value, params: [...document.querySelectorAll('.tparam')].map(x => x.value) } : null;
+  if (needsTpl && !template.name) return toast('Escolha o template (há pacientes fora das 24h)');
+  const busy = src === 'conv' ? rs.filter(r => ['ativo', 'aguardando_inicio'].includes(convs.find(c => c.id === r.conversationId)?.flow?.status)).length : 0;
+  if (!confirm(`Disparar o fluxo "${$('#dFlow').selectedOptions[0].text}" para ${rs.length} paciente(s)?` + (busy ? `\n\n⚠️ ${busy} já estão no meio de um fluxo e vão recomeçar neste.` : ''))) return;
+  $('#dGo').disabled = true;
+  try {
+    await api('/api/dispatch', { method: 'POST', body: { flowId: $('#dFlow').value, mode, template, contacts: rs } });
+    toast('Disparo iniciado 🚀'); loadDispatches();
+    if (src === 'conv') { picked.clear(); setTimeout(loadConvs, 2500); }
+  } catch (e) { toast('Erro: ' + e.message); }
+  $('#dGo').disabled = false;
+}
+async function loadDispatches() {
+  const ds = await api('/api/dispatches');
+  $('#dList').innerHTML = ds.map(d => `<div style="border-top:1px solid var(--line);padding:10px 0">
+    <div class="row" style="justify-content:space-between"><b>${esc(d.flowName)}</b><span class="hint">${new Date(d.createdAt).toLocaleString('pt-BR')}</span></div>
+    <div class="bar" style="margin:6px 0"><i style="width:${Math.round(d.done / d.total * 100)}%"></i></div>
+    <span class="hint">${d.done}/${d.total} · ✓ ${d.ok} enviados · ✕ ${d.fail} erros ${d.finishedAt ? '· finalizado' : '· enviando…'}</span>
+    ${d.fail ? `<details><summary class="hint">Ver erros</summary>${d.items.filter(i => i.status === 'erro').map(i => `<div class="hint">${esc(i.name)} ${esc(i.phone)} — ${esc(i.error)}</div>`).join('')}</details>` : ''}
+  </div>`).join('') || '<p class="hint">Nenhum disparo ainda.</p>';
+}
+
+// ---------- acompanhamento ----------
+async function loadSessions() {
+  const fid = $('#aFlow').value;
+  const ss = await api('/api/sessions' + (fid ? '?flowId=' + fid : ''));
+  const cnt = {}; ss.forEach(s => cnt[s.status] = (cnt[s.status] || 0) + 1);
+  $('#aStats').innerHTML = `<div><b>${ss.length}</b>Total</div>` + ['aguardando_inicio', 'ativo', 'concluido', 'humano', 'erro'].map(k => `<div><b>${cnt[k] || 0}</b>${STATUS[k]}</div>`).join('');
+  $('#aBody').innerHTML = ss.map(s => {
+    const f = flows.find(x => x.id === s.flowId); const st = f?.steps.find(x => x.id === s.currentStepId);
+    const ans = Object.entries(s.answers || {}).map(([k, v]) => `<div><span class="hint">${esc(k)}:</span> ${esc(v)}</div>`).join('');
+    return `<tr><td><b>${esc(s.contactName || '—')}</b><div class="hint">${esc(s.phone)} · conv. #${s.conversationId}</div></td>
+      <td><span class="chip c-${s.status}">${STATUS[s.status] || s.status}</span>${s.error ? `<div class="hint">${esc(s.error)}</div>` : ''}</td>
+      <td>${['ativo', 'aguardando_inicio'].includes(s.status) ? esc(st?.title || '') : ''}</td><td>${ans}</td>
+      <td class="hint">${new Date(s.updatedAt).toLocaleString('pt-BR')}</td>
+      <td><details><summary class="hint">histórico</summary>${(s.history || []).map(h => `<div class="hint">${new Date(h.at).toLocaleTimeString('pt-BR')} <b>${h.who}</b>: ${esc(h.text)}</div>`).join('')}</details>
+      ${['ativo', 'aguardando_inicio'].includes(s.status) ? `<button class="x" onclick="cancelS(${s.conversationId})">parar fluxo</button>` : ''}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="hint">Ninguém ainda.</td></tr>';
+}
+async function cancelS(c) { if (!confirm('Parar o fluxo para este paciente? (a equipe assume a conversa)')) return; await api(`/api/sessions/${c}/cancel`, { method: 'POST' }); loadSessions(); }
+function exportCsv() { location.href = '/api/sessions.csv' + ($('#aFlow').value ? '?flowId=' + $('#aFlow').value : ''); }
+
+// ---------- config ----------
+async function loadCfg() {
+  cfg = await api('/api/config');
+  $('#st').textContent = cfg.configured ? `Chatwoot conectado · caixa #${cfg.inbox} · modo ${cfg.buttonMode}` : '⚠️ Configure o .env';
+  const wh = location.origin + cfg.webhookPath;
+  $('#cfg').innerHTML = `<div class="hint">Chatwoot: <code>${esc(cfg.chatwootUrl || 'não definido')}</code> · Conta <code>${esc(cfg.account || '—')}</code> · Caixa de entrada <code>${esc(cfg.inbox || '—')}</code> · Modo dos botões <code>${esc(cfg.buttonMode)}</code></div>
+    <label>URL do webhook (cole no Chatwoot)</label><div class="row" style="flex-wrap:nowrap"><input readonly value="${esc(wh)}" id="wh"><button class="g" onclick="navigator.clipboard.writeText($('#wh').value);toast('Copiado')">Copiar</button></div>
+    ${location.hostname === 'localhost' ? '<div class="warn">Você está em localhost: o Chatwoot só alcança este sistema quando ele estiver publicado com um endereço público (ver README).</div>' : ''}
+    ${!cfg.hasPassword ? '<div class="warn">Painel sem senha — defina ADMIN_PASSWORD no .env antes de publicar.</div>' : ''}`;
+}
+async function testConn() { $('#testMsg').textContent = 'Testando…'; const r = await api('/api/test', { method: 'POST' }); $('#testMsg').textContent = r.ok ? `✓ OK — caixa “${r.inbox}” (${r.channel}${r.provider ? ' / ' + r.provider : ''})` : '✕ ' + r.error; }
+
+loadCfg(); loadFlows().then(() => { if (flows[0]) openFlow(flows[0].id); });
+</script>
+</body>
+</html>

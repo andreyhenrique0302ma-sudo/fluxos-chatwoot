@@ -1,0 +1,9 @@
+{
+  "name": "fluxos-chatwoot",
+  "version": "1.0.0",
+  "description": "Fluxos de mensagens com botões para WhatsApp via Chatwoot",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.21.2" }
+}
